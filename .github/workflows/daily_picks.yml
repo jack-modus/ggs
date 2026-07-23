@@ -1,0 +1,52 @@
+name: Daily Picks
+
+on:
+  schedule:
+    # 6:30 AM UTC = 7:30 AM BST
+    - cron: '30 6 * * *'
+  workflow_dispatch:   # manual trigger from the Actions tab on your phone
+
+permissions:
+  contents: write    # needed to commit docs/index.html back to main
+
+jobs:
+  daily-picks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch racecard from Betfair
+        env:
+          BETFAIR_USERNAME: ${{ secrets.BETFAIR_USERNAME }}
+          BETFAIR_PASSWORD: ${{ secrets.BETFAIR_PASSWORD }}
+          BETFAIR_APP_KEY:  ${{ secrets.BETFAIR_APP_KEY }}
+        run: python fetch_racecard_actions.py
+
+      - name: Generate picks
+        run: |
+          RACECARD=$(ls *racecard.csv 2>/dev/null | sort | tail -1)
+          if [ -z "$RACECARD" ]; then
+            echo "No racecard CSV found — no races today or fetch failed."
+            exit 0
+          fi
+          python predict_actions.py "$RACECARD"
+
+      - name: Commit and push picks page
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git add docs/index.html
+          git diff --staged --quiet && echo "No changes to commit" && exit 0
+          git commit -m "picks $(date '+%Y-%m-%d %H:%M UTC')"
+          git push

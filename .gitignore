@@ -1,0 +1,23 @@
+# Large data files — never push these
+races_master*.csv
+results_*.csv
+*_racecard.csv
+predictions_today.csv
+going.csv
+
+# Sensitive files with hardcoded credentials
+fetch_racecard.py
+predict_v4.py
+
+# Certs — secrets handled via GitHub Secrets, not committed
+certs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Local scratch
+*.log
+*.bak
