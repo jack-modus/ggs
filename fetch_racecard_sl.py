@@ -13,7 +13,20 @@ Usage: python fetch_racecard_sl.py [YYYY-MM-DD]
 
 import requests, re, json, sys, io, os, time
 import pandas as pd
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
+
+LONDON = ZoneInfo('Europe/London')
+
+def to_local_time(hhmm_str, race_date):
+    """SL's JSON time field is in UTC; convert to Europe/London local (BST/GMT-aware)."""
+    m = re.match(r'(\d{1,2}):(\d{2})', str(hhmm_str or ''))
+    if not m:
+        return str(hhmm_str or '')
+    h, mi = int(m.group(1)), int(m.group(2))
+    utc_dt = datetime(race_date.year, race_date.month, race_date.day, h, mi, tzinfo=ZoneInfo('UTC'))
+    local_dt = utc_dt.astimezone(LONDON)
+    return local_dt.strftime('%H:%M')
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -128,7 +141,7 @@ for i, job in enumerate(race_jobs):
 
     course = job['course']
     going  = rs.get('going') or job['going'] or 'Unknown'
-    race_time = str(rs.get('time',''))[:5]
+    race_time = to_local_time(rs.get('time',''), target_date)
     title  = rs.get('name','')
     dist   = rs.get('distance','')
     cls    = rs.get('race_class','')
