@@ -164,7 +164,17 @@ for i, job in enumerate(race_jobs):
         hg_list = ride.get('headgear') or []
         aid = ' '.join(HEADGEAR_SYMBOLS.get(h.get('symbol',''), h.get('symbol','')) for h in hg_list)
 
-        odds_str = (ride.get('betting') or {}).get('current_odds','-') or '-'
+        # SL's betting.current_odds is a static/forecast price that does NOT move
+        # with the market. Real live prices are in bookmakerOdds[] per-bookmaker.
+        # Use the best (longest) live price there; keep current_odds only as a
+        # separate "forecast" reference for steam detection.
+        fcst_str = (ride.get('betting') or {}).get('current_odds','-') or '-'
+        bm_odds  = ride.get('bookmakerOdds') or []
+        live_odds = None
+        if bm_odds:
+            best = max(bm_odds, key=lambda b: b.get('decimalOdds', 0) or 0)
+            live_odds = best.get('fractionalOdds')
+        odds_str = live_odds or fcst_str
 
         # CDB from embedded previous_results (course/distance win history)
         prev_results = horse.get('previous_results') or []
@@ -186,7 +196,7 @@ for i, job in enumerate(race_jobs):
             'CDB': cdb, 'Age': age, 'Weight': handicap, 'Aid': aid,
             'Trainer': trainer_name, 'Jockey': jockey_name, 'Allow': '',
             'OR': or_val, 'AdjOR': '',
-            'Odds': odds_str, 'FcstOdds': odds_str, 'WtLbs': wt_lbs or '',
+            'Odds': odds_str, 'FcstOdds': fcst_str, 'WtLbs': wt_lbs or '',
             'Sire': '', 'Dam': '', 'DamSire': '', 'Sex': '',
             'IsJump': is_jump, 'Type': type_code,
             'MarketId': '', 'SelectionId': '',
