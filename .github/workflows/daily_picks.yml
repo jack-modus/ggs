@@ -25,12 +25,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Fetch racecard from Betfair
-        env:
-          BETFAIR_USERNAME: ${{ secrets.BETFAIR_USERNAME }}
-          BETFAIR_PASSWORD: ${{ secrets.BETFAIR_PASSWORD }}
-          BETFAIR_APP_KEY:  ${{ secrets.BETFAIR_APP_KEY }}
-        run: python fetch_racecard_actions.py
+      - name: Fetch racecard from SportingLife
+        run: python fetch_racecard_sl.py
 
       - name: Generate picks
         run: |
