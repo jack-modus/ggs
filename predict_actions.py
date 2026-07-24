@@ -350,7 +350,10 @@ def assign_tier(r):
 out['tier'] = out.apply(assign_tier, axis=1)
 
 # ── Terminal output ────────────────────────────────────────────────────────────
-date_str = datetime.now().strftime('%A %-d %B %Y') if os.name != 'nt' else datetime.now().strftime('%A %d %B %Y')
+from zoneinfo import ZoneInfo
+now_london = datetime.now(ZoneInfo('UTC')).astimezone(ZoneInfo('Europe/London'))
+date_str = now_london.strftime('%A %-d %B %Y') if os.name != 'nt' else now_london.strftime('%A %d %B %Y')
+time_str = now_london.strftime('%H:%M')
 print(f"\n{'='*70}")
 print(f"  PICKS — {date_str}")
 print(f"  Model v6 | Conviction system | +28.6% ROI backtest (Jun-Apr 2026)")
@@ -410,7 +413,8 @@ html = f'''<title>Racing Picks — {date_str}</title>
 <style>
   body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:720px;margin:0 auto;padding:16px;background:#0f0f13;color:#e8e8e8}}
   h1{{font-size:1.2rem;color:#aaa;margin-bottom:4px}}
-  .updated{{font-size:.8rem;color:#555;margin-bottom:24px}}
+  .updated{{font-size:.8rem;color:#555;margin-bottom:8px}}
+  .odds-warning{{font-size:.75rem;color:#a06a2a;background:#2a2016;border-radius:6px;padding:8px 10px;margin-bottom:24px}}
   .tier-block{{margin-bottom:32px}}
   h2{{font-size:1rem;letter-spacing:.08em;margin:0 0 12px}}
   .conviction h2{{color:#f5c542}}
@@ -433,7 +437,8 @@ html = f'''<title>Racing Picks — {date_str}</title>
   .footer{{margin-top:32px;font-size:.75rem;color:#444;border-top:1px solid #222;padding-top:12px}}
 </style>
 <h1>Racing Picks</h1>
-<div class="updated">{date_str} &mdash; Model v6 &bull; +28.6% ROI backtest</div>
+<div class="updated">{date_str} &bull; updated {time_str} UK time &mdash; Model v6 &bull; +28.6% ROI backtest</div>
+<div class="odds-warning">Odds shown are a snapshot from the last update — always check the live price before staking.</div>
 {html_rows}
 <div class="footer">Conviction system: 5+ signals required for top tier. Avoid &lt;3/1.
 Backtest Jun 2025–Apr 2026 on unseen data.</div>'''

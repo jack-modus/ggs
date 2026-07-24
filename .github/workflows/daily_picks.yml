@@ -2,11 +2,16 @@ name: Daily Picks
 
 on:
   schedule:
-    - cron: '30 6 * * *'   # 7:30 AM BST daily
+    # Every 15 min, 06:00-20:00 UTC (7am-9pm BST) — covers all GB/IRE racing
+    - cron: '*/15 6-20 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: daily-picks
+  cancel-in-progress: false   # let runs queue rather than clobber each other
 
 jobs:
   daily-picks:
@@ -43,4 +48,6 @@ jobs:
           git add docs/index.html
           git diff --staged --quiet && echo "No changes" && exit 0
           git commit -m "picks $(date '+%Y-%m-%d %H:%M UTC')"
+          # pull --rebase first in case another run pushed in between
+          git pull --rebase origin main
           git push
