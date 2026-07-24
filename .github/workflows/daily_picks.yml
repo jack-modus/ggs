@@ -4,10 +4,7 @@ on:
   schedule:
     # 6:30 AM UTC = 7:30 AM BST
     - cron: '30 6 * * *'
-  workflow_dispatch:   # manual trigger from the Actions tab on your phone
-
-permissions:
-  contents: write    # needed to commit docs/index.html back to main
+  workflow_dispatch:   # manual trigger from the Actions tab
 
 jobs:
   daily-picks:
@@ -37,16 +34,24 @@ jobs:
         run: |
           RACECARD=$(ls *racecard.csv 2>/dev/null | sort | tail -1)
           if [ -z "$RACECARD" ]; then
-            echo "No racecard CSV found — no races today or fetch failed."
+            echo "No racecard found — no races today or fetch failed."
             exit 0
           fi
           python predict_actions.py "$RACECARD"
 
-      - name: Commit and push picks page
-        run: |
-          git config user.email "actions@github.com"
-          git config user.name "GitHub Actions"
-          git add docs/index.html
-          git diff --staged --quiet && echo "No changes to commit" && exit 0
-          git commit -m "picks $(date '+%Y-%m-%d %H:%M UTC')"
-          git push
+      - name: Get today's date
+        id: date
+        run: echo "label=$(date '+%A %d %B %Y')" >> $GITHUB_OUTPUT
+
+      - name: Email picks
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.GMAIL_ADDRESS }}
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          subject: "Racing Picks — ${{ steps.date.outputs.label }}"
+          to: jackgrobertson@gmail.com
+          from: Racing Picks <${{ secrets.GMAIL_ADDRESS }}>
+          html_body: file://docs/index.html
