@@ -47,7 +47,22 @@ jobs:
           git config user.name "GitHub Actions"
           git add docs/index.html
           git diff --staged --quiet && echo "No changes" && exit 0
-          git commit -m "picks $(date '+%Y-%m-%d %H:%M UTC')"
-          # pull --rebase first in case another run pushed in between
-          git pull --rebase origin main
-          git push
+
+          # docs/index.html is fully regenerated every run (not incrementally
+          # edited), so a rebase against another run's commit almost always
+          # conflicts line-for-line. Instead: always take OUR freshly-generated
+          # content and just replay it on top of whatever main currently is,
+          # retrying if another run pushes in the meantime.
+          for i in 1 2 3 4 5; do
+            git commit -m "picks $(date -u '+%Y-%m-%d %H:%M UTC')"
+            if git push origin main; then
+              echo "Pushed on attempt $i"
+              exit 0
+            fi
+            echo "Push rejected (attempt $i) — retrying with latest main"
+            git fetch origin main
+            git reset --soft origin/main
+            sleep 3
+          done
+          echo "Failed to push after 5 attempts"
+          exit 1
