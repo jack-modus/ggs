@@ -2,8 +2,10 @@ name: Daily Picks
 
 on:
   schedule:
-    # Every 15 min, 06:00-20:00 UTC (7am-9pm BST) — covers all GB/IRE racing
-    - cron: '*/15 6-20 * * *'
+    # Every 15 min, 04:00-20:00 UTC. GitHub delays the FIRST tick of each day's
+    # window by 2-3.5hrs in practice, so starting at 04:00 (not 06:00) aims to
+    # land the actual first run by ~7-8am BST instead of ~9-10:30am.
+    - cron: '*/15 4-20 * * *'
   workflow_dispatch:
 
 permissions:
