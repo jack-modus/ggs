@@ -325,8 +325,6 @@ def conviction_score(r):
     if pd.notna(t14d) and t14d >= 0.15: score += 1; signals.append(f'trainer {t14d:.0%}/14d')
     j14d = r.get('jockey_wr_14d', np.nan)
     if pd.notna(j14d) and j14d >= 0.15: score += 1; signals.append(f'jockey {j14d:.0%}/14d')
-    sf = r.get('SFRank', 99)
-    if pd.notna(sf) and sf <= 2: score += 1; signals.append(f'SF#{int(sf)}')
     if r.get('last_won_well',0)==1 or r.get('last_promising',0)==1:
         score += 1; signals.append('ran well last time')
     elif r.get('last_kept_on',0)==1:
@@ -374,7 +372,7 @@ for section, df in [('FLAT', out[~out['IsJump']]), ('JUMPS', out[out['IsJump']])
             cr = career_runs_lu.get(r['HorseName'], 0)
             form_note = f" [{cr}r]" if cr < 20 else ""
             sigs = '  |  '.join(r['signals']) if isinstance(r['signals'], list) else ''
-            print(f"      {str(r['Time']):<7} {r['Course']:<14} {r['HorseName']:<26} @ {str(r['Odds']):>7}  cv={r['conviction']:.1f}/9{form_note}")
+            print(f"      {str(r['Time']):<7} {r['Course']:<14} {r['HorseName']:<26} @ {str(r['Odds']):>7}  cv={r['conviction']:.1f}/8{form_note}")
             print(f"        {sigs}")
             if tier == 'CONVICTION':
                 conviction_picks.append(r)
@@ -401,7 +399,7 @@ for tier in ['CONVICTION','SELECT','WATCH']:
             <span class="course">{r["Course"]}</span>
             <span class="horse">{r["HorseName"]}</span>{cr_note}
             <span class="odds">@ {r["Odds"]}</span>
-            <span class="cv">cv {r["conviction"]:.1f}/9</span>
+            <span class="cv">cv {r["conviction"]:.1f}/8</span>
             <span class="edge">edge {r["win_edge"]:+.0%}</span>
           </div>
           <div class="signals">{sig_html}</div>
