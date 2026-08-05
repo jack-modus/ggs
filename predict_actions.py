@@ -334,6 +334,15 @@ def conviction_score(r):
     elif re.search(r'(?<![C])C(?!D)', cdb): score += 0.5; signals.append('course winner')
     gp = r.get('GoingPref', 0)
     if pd.notna(gp) and gp > 0.05: score += 1; signals.append(f'going +{gp:.0%}')
+    # Display-only: surfaces the model's single biggest input (trainer/jockey
+    # course record) so the shown signals match what actually drives the edge.
+    # No score points here -- that's already reflected in win_edge via the
+    # model, adding bonus points too would double-count it (same issue we
+    # found and fixed with the SFRank bonus).
+    tc = r.get('tc_wr', np.nan)
+    if pd.notna(tc) and tc >= 0.20: signals.append(f'trainer {tc:.0%} at course')
+    jc = r.get('jc_wr', np.nan)
+    if pd.notna(jc) and jc >= 0.20: signals.append(f'jockey {jc:.0%} at course')
     return score, signals
 
 out['conviction'], out['signals'] = zip(*out.apply(conviction_score, axis=1))
@@ -372,7 +381,7 @@ for section, df in [('FLAT', out[~out['IsJump']]), ('JUMPS', out[out['IsJump']])
             cr = career_runs_lu.get(r['HorseName'], 0)
             form_note = f" [{cr}r]" if cr < 20 else ""
             sigs = '  |  '.join(r['signals']) if isinstance(r['signals'], list) else ''
-            print(f"      {str(r['Time']):<7} {r['Course']:<14} {r['HorseName']:<26} @ {str(r['Odds']):>7}  cv={r['conviction']:.1f}/8{form_note}")
+            print(f"      {str(r['Time']):<7} {r['Course']:<14} {r['HorseName']:<26} @ {str(r['Odds']):>7}  cv={r['conviction']:.1f}/9{form_note}")
             print(f"        {sigs}")
             if tier == 'CONVICTION':
                 conviction_picks.append(r)
@@ -399,7 +408,7 @@ for tier in ['CONVICTION','SELECT','WATCH']:
             <span class="course">{r["Course"]}</span>
             <span class="horse">{r["HorseName"]}</span>{cr_note}
             <span class="odds">@ {r["Odds"]}</span>
-            <span class="cv">cv {r["conviction"]:.1f}/8</span>
+            <span class="cv">cv {r["conviction"]:.1f}/9</span>
             <span class="edge">edge {r["win_edge"]:+.0%}</span>
           </div>
           <div class="signals">{sig_html}</div>
