@@ -55,6 +55,20 @@ jobs:
           # conflicts line-for-line. Instead: always take OUR freshly-generated
           # content and just replay it on top of whatever main currently is,
           # retrying if another run pushes in the meantime.
+          #
+          # IMPORTANT: on retry, do a HARD reset to the new origin/main, not a
+          # soft one. `reset --soft` only moves HEAD -- it leaves the index
+          # and working tree exactly as they were, so any tracked file this
+          # job didn't explicitly re-stage (predict_actions.py, model bundles,
+          # lookups_v6.pkl) stays at THIS job's original stale checkout. The
+          # next commit then bakes that stale content back in as a child of
+          # the newer commit -- silently reverting whatever the run that beat
+          # us to push had just updated. Confirmed happening in production on
+          # 5-7 Aug 2026: 2 days of a stale lookups_v6.pkl/model refresh
+          # silently undone this way. Hard reset avoids the whole bug class --
+          # every retry starts from a byte-exact copy of origin/main, with
+          # ONLY docs/index.html's fresh content reapplied on top.
+          cp docs/index.html /tmp/fresh_index.html
           for i in 1 2 3 4 5; do
             git commit -m "picks $(date -u '+%Y-%m-%d %H:%M UTC')"
             if git push origin main; then
@@ -63,7 +77,9 @@ jobs:
             fi
             echo "Push rejected (attempt $i) — retrying with latest main"
             git fetch origin main
-            git reset --soft origin/main
+            git reset --hard origin/main
+            cp /tmp/fresh_index.html docs/index.html
+            git add docs/index.html
             sleep 3
           done
           echo "Failed to push after 5 attempts"
